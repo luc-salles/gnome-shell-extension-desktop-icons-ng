@@ -1,0 +1,68 @@
+Index: gnome-shell-extension-desktop-icons-ng/app/desktopManager.js
+===================================================================
+--- gnome-shell-extension-desktop-icons-ng.orig/app/desktopManager.js
++++ gnome-shell-extension-desktop-icons-ng/app/desktopManager.js
+@@ -993,62 +993,7 @@ var DesktopManager = class {
+     }
+ 
+     findFiles(text) {
+-        this._findFileWindow = new Gtk.Dialog({
+-            use_header_bar: true,
+-            window_position: Gtk.WindowPosition.CENTER_ON_PARENT,
+-            resizable: false,
+-        });
+-        this._findFileButton = this._findFileWindow.add_button(_('OK'), Gtk.ResponseType.OK);
+-        this._findFileButton.sensitive = false;
+-        this._findFileWindow.add_button(_('Cancel'), Gtk.ResponseType.CANCEL);
+-        this._findFileWindow.set_modal(true);
+-        this._findFileWindow.set_title(_('Find Files on Desktop'));
+-        DesktopIconsUtil.windowHidePagerTaskbarModal(this._findFileWindow, true);
+-        let contentArea = this._findFileWindow.get_content_area();
+-        this._findFileTextArea = new Gtk.Entry();
+-        contentArea.pack_start(this._findFileTextArea, true, true, 5);
+-        contentArea = undefined;
+-        this._findFileSignalManager = new SignalManager.SignalManager();
+-        this._findFileSignalManager.connectSignal(this._findFileTextArea, 'activate', () => {
+-            if (this._findFileButton.sensitive) {
+-                this._findFileWindow.response(Gtk.ResponseType.OK);
+-            }
+-        });
+-        this._findFileSignalManager.connectSignal(this._findFileTextArea, 'changed', () => {
+-            let context = this._findFileTextArea.get_style_context();
+-            if (this.scanForFiles(this._findFileTextArea.text, true)) {
+-                this._findFileButton.sensitive = true;
+-                if (context.has_class('not-found')) {
+-                    context.remove_class('not-found');
+-                }
+-            } else {
+-                this._findFileButton.sensitive = false;
+-                this._findFileTextArea.error_bell();
+-                if (!context.has_class('not-found')) {
+-                    context.add_class('not-found');
+-                }
+-            }
+-            this.searchEventTime = GLib.get_monotonic_time();
+-        });
+-        this._findFileTextArea.grab_focus_without_selecting();
+-        if (text) {
+-            this._findFileTextArea.set_text(text);
+-            this._findFileTextArea.set_position(text.length);
+-        } else {
+-            this.scanForFiles(null);
+-        }
+-        this._findFileWindow.show_all();
+-        this._findFileSignalManager.connectSignal(this._findFileWindow, 'close', () => {
+-            this._findFileWindow.response(Gtk.ResponseType.CANCEL);
+-        });
+-        this._findFileSignalManager.connectSignal(this._findFileWindow, 'response', (actor, retval) => {
+-            if (retval == Gtk.ResponseType.CANCEL) {
+-                this.unselectAll();
+-            }
+-            this._findFileSignalManager.disconnectAllSignals();
+-            this._findFileWindow.destroy();
+-            this._findFileWindow = null;
+-        });
++       	    return 0;
+     }
+ 
+     scanForFiles(text, setselected) {

@@ -1,0 +1,13 @@
+Index: gnome-shell-extension-desktop-icons-ng/app/fileItem.js
+===================================================================
+--- gnome-shell-extension-desktop-icons-ng.orig/app/fileItem.js
++++ gnome-shell-extension-desktop-icons-ng/app/fileItem.js
+@@ -409,7 +409,7 @@ var FileItem = class extends desktopIcon
+         }
+ 
+         if (!this.trustedDesktopFile) {
+-            let title = 'Untrusted Desktop File';
++            let title = _('Untrusted Desktop File');
+             let error = _('This .desktop file is not trusted, it can not be launched. To enable launching, right-click, then:\n\n<b>Enable "Allow Launching"</b>');
+             this._showerrorpopup(title, error);
+         }

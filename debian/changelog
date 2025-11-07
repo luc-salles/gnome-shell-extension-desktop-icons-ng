@@ -1,0 +1,307 @@
+gnome-shell-extension-desktop-icons-ng (48.Policorp.0-6) stable; urgency=medium
+
+  * Changed icon size
+
+ -- Edson Juliano Drosdeck <edson@policorp.com.br>  Wed, 13 Aug 2025 21:24:08 +0000
+
+gnome-shell-extension-desktop-icons-ng (48.Policorp.0-5) stable; urgency=medium
+
+  * Add tradução pendentes
+
+ -- Lucas Salles <lucas.salles@policorp.com.br>  Wed, 06 Aug 2025 10:16:34 -0400
+
+gnome-shell-extension-desktop-icons-ng (48.Policorp.0-4) stable; urgency=medium
+
+  * Removend control +f function
+
+ -- Edson Juliano Drosdeck <edson@policorp.com.br>  Tue, 29 Apr 2025 13:49:32 +0000
+
+gnome-shell-extension-desktop-icons-ng (48.Policorp.0-3) stable; urgency=medium
+
+  * Updated in Policorp
+
+ -- Edson Juliano Drosdeck <edson@policorp.com.br>  Wed, 12 Mar 2025 19:02:10 +0000
+
+gnome-shell-extension-desktop-icons-ng (48.0.0-3) unstable; urgency=medium
+
+  * Stop excluding new apparmor v4 profile on Debian
+  * Add Breaks against older apparmor versions
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Sat, 08 Mar 2025 10:50:19 -0500
+
+gnome-shell-extension-desktop-icons-ng (48.0.0-2) unstable; urgency=medium
+
+  [ Sergio Costas Rodriguez ]
+  * Workaround double extension enablement bug (LP: #2098102)
+
+  [ Marco Trevisan (Treviño) ]
+  * d/p: Refresh patches
+
+ -- Marco Trevisan (Treviño) <marco@ubuntu.com>  Tue, 25 Feb 2025 17:52:00 +0100
+
+gnome-shell-extension-desktop-icons-ng (48.0.0-1) unstable; urgency=high
+
+  * New upstream release
+  * Don't install new apparmor v4 profile on Debian (Closes: #1095797)
+  * Remove GNOME Shell 48 patch: applied in new release
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Wed, 19 Feb 2025 19:40:01 -0500
+
+gnome-shell-extension-desktop-icons-ng (47.0.13-1) unstable; urgency=medium
+
+  [ Sergio Costas Rodríguez ]
+  * Add apparmor rules to make thumbnails work again (LP: #2079983)
+
+  [ Boyuan Yang ]
+  * debian/control: Remove retired package uploader. (Closes: #1069561)
+    Thank you Gunnar Hjalmarsson for your years of contributing to Debian.
+
+  [ Jeremy Bícha ]
+  * New upstream release
+  * Remove all patches: applied in new release
+  * Cherry-pick patch to mark compatible with GNOME Shell 48
+  * Bump maximum GNOME Shell to 48
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Sun, 09 Feb 2025 08:15:09 -0500
+
+gnome-shell-extension-desktop-icons-ng (47.0.11-3) unstable; urgency=medium
+
+  * Add patch to mark compatible with GNOME Shell 47
+  * Bump maximum GNOME Shell version to 47
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Mon, 05 Aug 2024 13:44:23 -0400
+
+gnome-shell-extension-desktop-icons-ng (47.0.11-2) unstable; urgency=medium
+
+  * Bump Standards Version to 4.7.0
+  * Release to unstable
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Sat, 13 Jul 2024 06:47:41 -0400
+
+gnome-shell-extension-desktop-icons-ng (47.0.11-1) experimental; urgency=medium
+
+  * New upstream release
+    - Fix using arrow keys when renaming (LP: #2067831)
+    - Fix error when opening preferences (LP: #2061070)
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Thu, 20 Jun 2024 17:11:11 -0400
+
+gnome-shell-extension-desktop-icons-ng (47.0.9-1) experimental; urgency=medium
+
+  * Drop the upstream version mangling since this extension likely won't
+    be bundled in gnome-shell-extensions before 47.1
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Fri, 31 May 2024 09:40:12 -0400
+
+gnome-shell-extension-desktop-icons-ng (46+really47.0.9-1) experimental; urgency=medium
+
+  * New upstream release
+  * Stop using debian/control.in and dh_gnome_clean
+  * Bump maximum GNOME Shell version to 46
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Mon, 19 Feb 2024 07:33:59 -0500
+
+gnome-shell-extension-desktop-icons-ng (46+really47.0.7-1) experimental; urgency=medium
+
+  * New upstream release
+    - Fix regression that allowed desktop icons to be placed under autohidden
+      Dock (LP: #2039475)
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Wed, 18 Oct 2023 10:04:14 -0400
+
+gnome-shell-extension-desktop-icons-ng (46+really47.0.5-1) experimental; urgency=medium
+
+  * New upstream release
+    - First release with GNOME 45 support (Closes: #1052094)
+  * debian/control: Bump minimum GNOME Shell to 45 to match metadata.json
+  * Refresh patch
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Mon, 25 Sep 2023 09:09:06 -0400
+
+gnome-shell-extension-desktop-icons-ng (46+really47.0.4-2) unstable; urgency=medium
+
+  * Restore accidentally dropped changes from 46+really47.0.2-3
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Thu, 24 Aug 2023 11:23:46 -0400
+
+gnome-shell-extension-desktop-icons-ng (46+really47.0.4-1) unstable; urgency=medium
+
+  * New upstream release
+  * Drop Mutter 44 patch: applied in new release
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Thu, 24 Aug 2023 11:18:49 -0400
+
+gnome-shell-extension-desktop-icons-ng (46+really47.0.2-3) unstable; urgency=medium
+
+  * debian/control.in: Depends on gir1.2-gnomedesktop-3.0
+
+ -- Sebastien Bacher <seb128@ubuntu.com>  Tue, 21 Mar 2023 16:50:33 +0100
+
+gnome-shell-extension-desktop-icons-ng (46+really47.0.2-2) unstable; urgency=medium
+
+  * Cherry-pick patch to support mutter 44
+  * debian/control.in: Allow installing with GNOME Shell 44
+  * Update standards version to 4.6.2, no changes needed
+
+ -- Jeremy Bicha <jbicha@ubuntu.com>  Fri, 17 Feb 2023 09:54:47 -0500
+
+gnome-shell-extension-desktop-icons-ng (46+really47.0.2-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Jeremy Bicha <jbicha@ubuntu.com>  Tue, 17 Jan 2023 14:41:27 -0500
+
+gnome-shell-extension-desktop-icons-ng (46+really47.0.1-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Jeremy Bicha <jbicha@ubuntu.com>  Wed, 11 Jan 2023 10:53:21 -0500
+
+gnome-shell-extension-desktop-icons-ng (46+really47-1) unstable; urgency=medium
+
+  * New upstream release (LP: #1998084)
+    - Add keyboard navigation to desktop icons (LP: #1855711)
+    - Fix rubberband with margins like top bar or dock (LP: #1971055)
+  * Use debian/watch to mangle the upstream version to lessen version skew
+    if this extension is merged into gnome-shell-extensions later
+  * Drop desktopGrid and metadata patches: applied in new release
+  * Depend on gir1.2-gnomeautoar-0.1 instead of file-roller & xdg-desktop-portal
+    (Closes: #1010810)
+
+ -- Jeremy Bicha <jbicha@ubuntu.com>  Wed, 14 Dec 2022 16:50:12 -0500
+
+gnome-shell-extension-desktop-icons-ng (46-3) unstable; urgency=medium
+
+  * Add patch to mark compatible with GNOME Shell 43
+  * debian/control.in: Bump maximum gnome-shell to 43
+
+ -- Jeremy Bicha <jbicha@ubuntu.com>  Sun, 21 Aug 2022 11:14:59 -0400
+
+gnome-shell-extension-desktop-icons-ng (46-2) unstable; urgency=medium
+
+  [ Sergio Costas ]
+  * Cherry-pick patch to fix hang when using 2 monitors with different zoom
+    settings (LP: #1976204)
+
+ -- Jeremy Bicha <jbicha@ubuntu.com>  Tue, 28 Jun 2022 08:54:11 -0400
+
+gnome-shell-extension-desktop-icons-ng (46-1) unstable; urgency=medium
+
+  * New upstream release
+  * Bump Standards-Version to 4.6.1
+
+ -- Gunnar Hjalmarsson <gunnarhj@debian.org>  Mon, 16 May 2022 19:53:08 +0200
+
+gnome-shell-extension-desktop-icons-ng (45-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Gunnar Hjalmarsson <gunnarhj@debian.org>  Sun, 08 May 2022 11:29:31 +0200
+
+gnome-shell-extension-desktop-icons-ng (44-1) unstable; urgency=medium
+
+  * New upstream release
+  * Drop 4 patches applied in new release
+  * debian/control.in: Set maximum compatible gnome-shell version
+    (Closes: #1008542)
+
+ -- Jeremy Bicha <jbicha@ubuntu.com>  Thu, 21 Apr 2022 14:03:35 -0400
+
+gnome-shell-extension-desktop-icons-ng (43-2) unstable; urgency=medium
+
+  * Cherry-pick translation updates & a fix for high CPU
+    when moving or resizing a window (LP: #1965537)
+
+ -- Jeremy Bicha <jbicha@ubuntu.com>  Tue, 12 Apr 2022 14:23:17 -0400
+
+gnome-shell-extension-desktop-icons-ng (43-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Gunnar Hjalmarsson <gunnarhj@debian.org>  Wed, 23 Mar 2022 15:03:28 +0100
+
+gnome-shell-extension-desktop-icons-ng (42-1) unstable; urgency=medium
+
+  * New upstream release (LP: #1965537)
+  * d/p/ding-Use-more-generic-actions-name-on-bus-while-actions-c.patch:
+    - Dropped, applied upstream
+  * d/p/prefs-Add-a-button-to-quickly-open-DING-settings-from-ext.patch:
+    - Dropped, equivalent change committed upstream
+
+ -- Gunnar Hjalmarsson <gunnarhj@debian.org>  Wed, 23 Mar 2022 01:11:15 +0100
+
+gnome-shell-extension-desktop-icons-ng (39+20220316.cc9c7d3e-1) unstable; urgency=medium
+
+  [ Jeremy Bicha ]
+  * New upstream git snapshot compatible with GNOME Shell 42
+  * Drop all patches: applied in new release
+
+  [ Marco Trevisan (Treviño) ]
+  * Add patch to use the Ubuntu Appearance panel to display settings
+    in the Ubuntu session (LP: #1964732)
+  * Add patches to show full settings directly from the Extensions apps
+
+ -- Jeremy Bicha <jbicha@ubuntu.com>  Thu, 17 Mar 2022 08:37:01 -0400
+
+gnome-shell-extension-desktop-icons-ng (39-2) unstable; urgency=medium
+
+  * debian/patches: Update up to upstream commit f8057206
+  * debian/patches: Add support for GNOME 42
+  * debian/patches: Add support for startup-id with event timestamps
+  * debian/control: Add dependency on file-roller
+
+ -- Marco Trevisan (Treviño) <marco@ubuntu.com>  Fri, 25 Feb 2022 06:50:14 +0100
+
+gnome-shell-extension-desktop-icons-ng (39-1) unstable; urgency=medium
+
+  * New upstream release (LP: #1917044)
+
+ -- Gunnar Hjalmarsson <gunnarhj@debian.org>  Thu, 10 Feb 2022 15:56:07 +0100
+
+gnome-shell-extension-desktop-icons-ng (38-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Gunnar Hjalmarsson <gunnarhj@debian.org>  Thu, 13 Jan 2022 17:01:35 +0100
+
+gnome-shell-extension-desktop-icons-ng (35-1) unstable; urgency=medium
+
+  * New upstream release (LP: #1956879)
+
+ -- Gunnar Hjalmarsson <gunnarhj@debian.org>  Sun, 09 Jan 2022 22:31:55 +0100
+
+gnome-shell-extension-desktop-icons-ng (34-1) unstable; urgency=medium
+
+  * New upstream release
+  * Dropped patch, applied upstream
+  * Bump d/copyright years
+
+ -- Gunnar Hjalmarsson <gunnarhj@debian.org>  Fri, 07 Jan 2022 17:53:20 +0100
+
+gnome-shell-extension-desktop-icons-ng (33-1) unstable; urgency=medium
+
+  * Add upstream meta data
+  * New upstream release
+  * Cherry picked from upstream master: translation-fixes.patch
+
+ -- Gunnar Hjalmarsson <gunnarhj@debian.org>  Sun, 28 Nov 2021 19:42:33 +0100
+
+gnome-shell-extension-desktop-icons-ng (24-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Gunnar Hjalmarsson <gunnarhj@debian.org>  Sat, 30 Oct 2021 15:26:33 +0200
+
+gnome-shell-extension-desktop-icons-ng (23-1) unstable; urgency=medium
+
+  * New upstream release
+  * Drop translations_not_source.patch
+    - translations domain issue fixed upstream
+
+ -- Gunnar Hjalmarsson <gunnarhj@debian.org>  Mon, 11 Oct 2021 20:36:48 +0200
+
+gnome-shell-extension-desktop-icons-ng (20-1) unstable; urgency=medium
+
+  * Initial release (closes: #987291)
+
+ -- Gunnar Hjalmarsson <gunnarhj@debian.org>  Wed, 22 Sep 2021 23:15:14 +0200

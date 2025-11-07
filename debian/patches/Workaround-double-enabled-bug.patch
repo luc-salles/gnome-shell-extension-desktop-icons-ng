@@ -1,0 +1,30 @@
+From: Sergio Costas Rodriguez <sergio.costas@canonical.com>
+Date: Tue, 25 Feb 2025 15:23:41 +0100
+Subject: Workaround double enabled bug
+
+In some specific cases, gnome shell can call 'enable' twice for
+an extension without calling 'disable' in between. This can
+break monkey patching.
+
+This is a workaround for this, until upstream fixes it.
+
+Bug-Ubuntu: https://bugs.launchpad.net/bugs/2098102
+Forwarded: yes
+---
+ gnomeShellOverride.js | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/gnomeShellOverride.js b/gnomeShellOverride.js
+index f520d04..11519e2 100644
+--- a/gnomeShellOverride.js
++++ b/gnomeShellOverride.js
+@@ -75,6 +75,9 @@ export class GnomeShellOverride {
+      */
+ 
+     replaceMethod(className, methodName, functionToCall, classId) {
++        if (className.prototype[methodName] === functionToCall) {
++            return;
++        }
+         if (classId) {
+             replaceData[`old_${classId}_${methodName}`] = [className.prototype[methodName], className, methodName, classId];
+         } else {

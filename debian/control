@@ -1,0 +1,27 @@
+Source: gnome-shell-extension-desktop-icons-ng
+Section: gnome
+Priority: optional
+Maintainer: Edson Juliano Drosdeck <edson@policorp.com.br>
+Build-Depends: debhelper-compat (= 13),
+               dh-sequence-gnome,
+               libglib2.0-bin,
+               meson
+Standards-Version: 4.7.0
+Homepage: https://gitlab.com/rastersoft/desktop-icons-ng
+Rules-Requires-Root: no
+
+Package: gnome-shell-extension-desktop-icons-ng
+Architecture: all
+Depends: ${misc:Depends},
+         gir1.2-gnomeautoar-0.1,
+         gir1.2-gnomedesktop-3.0,
+         gnome-shell (>= 45~),
+         gnome-shell (<< 49~),
+         gjs,
+         nautilus (>= 3.38),
+Breaks: apparmor (<< 4)
+Description: desktop icon support for GNOME Shell
+ This package provides a GNOME Shell extension for showing the contents
+ of ~/Desktop on the desktop of the Shell. Common file management
+ operations such as launching, copy/paste, rename and deleting are
+ supported.

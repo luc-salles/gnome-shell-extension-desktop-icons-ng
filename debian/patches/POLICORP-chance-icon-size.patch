@@ -1,0 +1,13 @@
+Index: gnome-shell-extension-desktop-icons-ng/schemas/org.gnome.shell.extensions.ding.gschema.xml
+===================================================================
+--- gnome-shell-extension-desktop-icons-ng.orig/schemas/org.gnome.shell.extensions.ding.gschema.xml
++++ gnome-shell-extension-desktop-icons-ng/schemas/org.gnome.shell.extensions.ding.gschema.xml
+@@ -21,7 +21,7 @@
+     </enum>
+     <schema path="/org/gnome/shell/extensions/ding/" id="org.gnome.shell.extensions.ding">
+     <key name="icon-size" enum="org.gnome.shell.extension.ding.ZoomLevel">
+-        <default>'standard'</default>
++        <default>'small'</default>
+         <summary>Icon size</summary>
+         <description>Set the size for the desktop icons.</description>
+     </key>
