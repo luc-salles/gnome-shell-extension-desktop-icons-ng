@@ -2,3 +2,4 @@ Workaround-double-enabled-bug.patch
 0005-remover-dialog-findfiles.patch
 add-string-to-be-translated.patch
 POLICORP-chance-icon-size.patch
+0006-adiciona-debug-switch.patch

@@ -1,0 +1,849 @@
+diff --git a/extension.js b/extension.js
+index ddcb99a..acd7b30 100644
+--- a/extension.js
++++ b/extension.js
+@@ -1,41 +1,48 @@
+-/* DING: Desktop Icons New Generation for GNOME Shell
+- *
+- * Copyright (C) 2019 Sergio Costas (rastersoft@gmail.com)
+- * Based on code original (C) Carlos Soriano
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation, version 3 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+- */
+ 'use strict';
+-import Clutter from 'gi://Clutter'
+-import GLib from 'gi://GLib'
+-import Gio from 'gi://Gio'
+-import Meta from 'gi://Meta'
+-import St from 'gi://St'
+-
+-import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+-
+-import * as Main from 'resource:///org/gnome/shell/ui/main.js'
+ 
++import Clutter from 'gi://Clutter';
++import GLib from 'gi://GLib';
++import Gio from 'gi://Gio';
++import Meta from 'gi://Meta';
++import St from 'gi://St';
++import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
++import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+ import * as EmulateX11 from './emulateX11WindowType.js';
+ import * as VisibleArea from './visibleArea.js';
+ import * as GnomeShellOverride from './gnomeShellOverride.js';
+ 
++const Logger = {
++    isEnabled: false,
++
++    updateState: function(enabled) {
++        this.isEnabled = enabled;
++        if (enabled) console.log('[DING] Debug ativado.');
++    },
++
++    log: function(msg) {
++        if (this.isEnabled) console.log(msg);
++    },
++
++    error: function(msg) {
++        if (this.isEnabled) console.error(msg);
++    },
++
++    print: function(msg) {
++        if (this.isEnabled) globalThis.print(msg);
++    }
++};
++
++
+ const Clipboard = St.Clipboard.get_default();
+ const CLIPBOARD_TYPE = St.ClipboardType.CLIPBOARD;
+ 
+ export default class DING extends Extension {
+     constructor(metadata) {
+         super(metadata);
++        
++        this._settings = null;
++        this._settingsChangedId = 0;
++
+         this.DesktopIconsUsableArea = null;
+         this.data = {};
+         this.data.isEnabled = false;
+@@ -44,34 +51,27 @@ export default class DING extends Extension {
+         this.data.dbusTimeoutId = 0;
+         this.data.switchWorkspaceId = 0;
+         this.data.enableCalled = false;
+-
+         this.data.GnomeShellOverride = null;
+-
+-        /* The constructor of the EmulateX11 class only initializes some
+-        * internal properties, but nothing else. In fact, it has its own
+-        * enable() and disable() methods. That's why it could have been
+-        * created here, in init(). But since the rule seems to be NO CLASS
+-        * CREATION IN INIT UNDER NO CIRCUMSTANCES...
+-        */
++        
+         this.data.x11Manager = null;
+         this.data.visibleArea = null;
+-
+-        /* Ensures that there aren't "rogue" processes.
+-        * This is a safeguard measure for the case of Gnome Shell being
+-        * relaunched (for example, under X11, with Alt+F2 and R), to kill
+-        * any old DING instance. That's why it must be here, in init(),
+-        * and not in enable() or disable() (disable already guarantees that
+-        * the current instance is killed).
+-        */
++        
+         this.doKillAllOldDesktopProcesses();
+     }
+ 
+     enable() {
++        this._settings = this.getSettings(); 
++
++        Logger.updateState(this._settings.get_boolean('debug-mode'));
++
++        this._settingsChangedId = this._settings.connect('changed::debug-mode', () => {
++            Logger.updateState(this._settings.get_boolean('debug-mode'));
++        });
++
+         if (this.data.enableCalled) {
+             return;
+         }
+         this.data.enableCalled = true;
+-
+         if (!this.data.GnomeShellOverride) {
+             this.data.GnomeShellOverride = new GnomeShellOverride.GnomeShellOverride();
+         }
+@@ -82,7 +82,7 @@ export default class DING extends Extension {
+             this.DesktopIconsUsableArea = new VisibleArea.VisibleArea();
+             this.data.visibleArea = this.DesktopIconsUsableArea;
+         }
+-        // If the desktop is still starting up, we wait until it is ready
++        
+         if (Main.layoutManager._startingUp) {
+             this.data.startupPreparedId = Main.layoutManager.connect('startup-complete', () => this.innerEnable());
+         } else {
+@@ -92,24 +92,29 @@ export default class DING extends Extension {
+     }
+ 
+     disable() {
++        if (this._settings) {
++            if (this._settingsChangedId) {
++                this._settings.disconnect(this._settingsChangedId);
++                this._settingsChangedId = 0;
++            }
++            this._settings = null;
++        }
++
+         if (!this.data.enableCalled) {
+             return;
+         }
+         this.data.enableCalled = false;
+-
+         this.DesktopIconsUsableArea = null;
+         this.data.isEnabled = false;
+         this.killCurrentProcess();
+         this.data.GnomeShellOverride.disable();
+         this.data.x11Manager.disable();
+         this.data.visibleArea.disable();
+-
+         if (this.data.doCopyId) {
+             this.data.doCopy.disconnect(this.data.doCopyId);
+             this.data.doCopyId = 0;
+             this.data.doCopy = undefined;
+         }
+-
+         if (this.data.switchWorkspaceId) {
+             global.window_manager.disconnect(this.data.switchWorkspaceId);
+             this.data.switchWorkspaceId = 0;
+@@ -119,28 +124,23 @@ export default class DING extends Extension {
+             this.data.doCutId = 0;
+             this.data.doCut = undefined;
+         }
+-
+         if (this.data.disableTimerId) {
+             this.data.disableTimer.disconnect(this.data.disableTimerId);
+             this.data.disableTimerId = 0;
+             this.data.disableTimer = undefined;
+         }
+-
+         this.data.desktopGeometry = undefined;
+-
+-        // disconnect signals only if connected
++        
+         if (this.data.dbusConnectionGroupId) {
+             this.data.dbusConnection.unexport_action_group(this.data.dbusConnectionGroupId);
+             this.data.dbusConnectionGroupId = 0;
+             this.data.dbusConnection = undefined;
+         }
+-
+         if (this.data.dbusConnectionId) {
+             Gio.bus_unown_name(this.data.dbusConnectionId);
+             this.data.dbusConnectionId = 0;
+         }
+         this.data.actionGroup = undefined;
+-
+         if (this.data.visibleAreaId) {
+             this.data.visibleArea.disconnect(this.data.visibleAreaId);
+             this.data.visibleAreaId = 0;
+@@ -167,18 +167,13 @@ export default class DING extends Extension {
+         }
+     }
+ 
+-    /**
+-     * The true code that configures everything and launches the desktop program
+-     */
+     innerEnable() {
+         if (this.data.startupPreparedId !== null) {
+             Main.layoutManager.disconnect(this.data.startupPreparedId);
+             this.data.startupPreparedId = null;
+         }
+-
+         this.data.GnomeShellOverride.enable();
+-
+-        // under X11 we don't need to cheat, so only do all this under wayland
++        
+         if (Meta.is_wayland_compositor()) {
+             this.data.x11Manager.enable();
+         } else {
+@@ -191,44 +186,17 @@ export default class DING extends Extension {
+                 }
+             });
+         }
+-
+-        /*
+-        * If the desktop geometry changes (because a new monitor has been added, for example),
+-        * we kill the desktop program. It will be relaunched automatically with the new geometry,
+-        * thus adapting to it on-the-fly.
+-        */
++        
+         this.data.monitorsChangedId = Main.layoutManager.connect('monitors-changed', () => this.updateDesktopGeometry());
+-        /*
+-        * Any change in the workareas must be detected too, for example if the used size
+-        * changes.
+-        */
+         this.data.workareasChangedId = global.display.connect('workareas-changed', () => this.updateDesktopGeometry());
+-
+-        /*
+-        * This callback allows to detect a change in the working area (like when changing the Scale value)
+-        */
+         this.data.visibleAreaId = this.data.visibleArea.connect('updated-usable-area', () => this.updateDesktopGeometry());
+-
+         this.data.isEnabled = true;
+         if (this.data.launchDesktopId) {
+             GLib.source_remove(this.data.launchDesktopId);
+         }
+-
+-        /*
+-        * Due to a problem in the Clipboard API in Gtk3, it is not possible to do the CUT/COPY operation from
+-        * dynamic languages like Javascript, because one of the methods needed is marked as NOT INTROSPECTABLE
+-        *
+-        * https://discourse.gnome.org/t/missing-gtk-clipboard-set-with-data-in-gtk-3/6920
+-        *
+-        * The right solution is to migrate DING to Gtk4, where the whole API is available, but that is a very
+-        * big task, so in the meantime, we take advantage of the fact that the St API, in Gnome Shell, can put
+-        * binary contents in the clipboard, so we use DBus to notify that we want to do a CUT or a COPY operation,
+-        * passing the URIs as parameters, and delegate that to the DING Gnome Shell extension. This is easily done
+-        * with a GLib.SimpleAction.
+-        */
++        
+         this.data.dbusConnectionId = Gio.bus_own_name(Gio.BusType.SESSION, 'com.rastersoft.dingextension', Gio.BusNameOwnerFlags.NONE, null, (connection, name) => {
+             this.data.dbusConnection = connection;
+-
+             this.data.doCopy = new Gio.SimpleAction({
+                 name: 'doCopy',
+                 parameter_type: new GLib.VariantType('as'),
+@@ -254,7 +222,6 @@ export default class DING extends Extension {
+             this.data.actionGroup.add_action(this.data.doCut);
+             this.data.actionGroup.add_action(this.data.disableTimer);
+             this.data.actionGroup.add_action(this.data.desktopGeometry);
+-
+             this.data.dbusConnectionGroupId = this.data.dbusConnection.export_action_group(
+                 '/com/rastersoft/dingextension/control',
+                 this.data.actionGroup
+@@ -263,27 +230,6 @@ export default class DING extends Extension {
+         }, null);
+     }
+ 
+-    /*
+-    * Before Gnome Shell 40, St API couldn't access binary data in the clipboard, only text data. Also, the
+-    * original Desktop Icons was a pure extension, so it was limited to what Clutter and St offered. That was
+-    * the reason why Nautilus accepted a text format for CUT and COPY operations in the form
+-    *
+-    *     x-special/nautilus-clipboard
+-    *     OPERATION
+-    *     FILE_URI
+-    *     [FILE_URI]
+-    *     [...]
+-    *
+-    * In Gnome Shell 40, St was enhanced and now it supports binary data; that's why Nautilus migrated to a
+-    * binary format identified by the atom 'x-special/gnome-copied-files', where the CUT or COPY operation is
+-    * shared.
+-    *
+-    */
+-    /**
+-     *
+-     * @param action
+-     * @param parameters
+-     */
+     manageCutCopy(action, parameters) {
+         let content = '';
+         if (action.name == 'doCut') {
+@@ -291,7 +237,6 @@ export default class DING extends Extension {
+         } else {
+             content += 'copy\n';
+         }
+-
+         let first = true;
+         for (let file of parameters.recursiveUnpack()) {
+             if (!first) {
+@@ -304,16 +249,11 @@ export default class DING extends Extension {
+         Clipboard.set_content(CLIPBOARD_TYPE, 'x-special/gnome-copied-files', new GLib.Bytes(obj.encode(content)));
+     }
+ 
+-    /**
+-     * Kills the current desktop program
+-     */
+     killCurrentProcess() {
+         if (this.data.launchDesktopId) {
+             GLib.source_remove(this.data.launchDesktopId);
+             this.data.launchDesktopId = 0;
+         }
+-
+-        // kill the desktop program. It will be reloaded automatically.
+         if (this.data.currentProcess && this.data.currentProcess.subprocess) {
+             this.data.currentProcess.cancel_timer();
+             this.data.currentProcess.cancellable.cancel();
+@@ -323,18 +263,12 @@ export default class DING extends Extension {
+         this.data.x11Manager.setWaylandClient(null);
+     }
+ 
+-    /**
+-     *
+-     */
+     updateDesktopGeometry() {
+         if (this.data.actionGroup && (Main.layoutManager.monitors.length != 0)) {
+             this.data.actionGroup.change_action_state('desktopGeometry', this.getDesktopGeometry());
+         }
+     }
+ 
+-    /**
+-     *
+-     */
+     getDesktopGeometry() {
+         let desktopList = [];
+         let ws = global.workspace_manager.get_workspace_by_index(0);
+@@ -358,23 +292,11 @@ export default class DING extends Extension {
+         return new GLib.Variant('av', desktopList);
+     }
+ 
+-    /**
+-     * This function checks all the processes in the system and kills those
+-     * that are a desktop manager from the current user (but not others).
+-     * This allows to avoid having several ones in case gnome shell resets,
+-     * or other odd cases. It requires the /proc virtual filesystem, but
+-     * doesn't fail if it doesn't exist.
+-     */
+-
+-    /**
+-     *
+-     */
+     doKillAllOldDesktopProcesses() {
+         let procFolder = Gio.File.new_for_path('/proc');
+         if (!procFolder.query_exists(null)) {
+             return;
+         }
+-
+         let fileEnum = procFolder.enumerate_children('standard::*', Gio.FileQueryInfoFlags.NONE, null);
+         let info;
+         while ((info = fileEnum.next_file(null))) {
+@@ -399,17 +321,15 @@ export default class DING extends Extension {
+             }
+             let path = `gjs ${GLib.build_filenamev([this.path, 'app', 'ding.js'])}`;
+             if (contents.startsWith(path)) {
+-                let proc = new Gio.Subprocess({argv: ['/bin/kill', filename]});
++                let proc = new Gio.Subprocess({
++                    argv: ['/bin/kill', filename]
++                });
+                 proc.init(null);
+                 proc.wait(null);
+             }
+         }
+     }
+ 
+-    /**
+-     *
+-     * @param reloadTime
+-     */
+     doRelaunch(reloadTime) {
+         this.data.currentProcess = null;
+         this.data.x11Manager.setWaylandClient(null);
+@@ -425,22 +345,14 @@ export default class DING extends Extension {
+         }
+     }
+ 
+-    /**
+-     * Launches the desktop program, passing to it the current desktop geometry for each monitor
+-     * and the path where it is stored. It also monitors it, to relaunch it in case it dies or is
+-     * killed. Finally, it reads STDOUT and STDERR and redirects them to the journal, to help to
+-     * debug it.
+-     */
+     launchDesktop() {
+-        console.log('Launching DING process');
++        // USO DO LOGGER:
++        Logger.log('Launching DING process');
+         let argv = [];
+         argv.push(GLib.build_filenamev([this.path, 'app', 'ding.js']));
+-        // Specify that it must work as true desktop
+         argv.push('-E');
+-        // The path. Allows the program to find translations, settings and modules.
+         argv.push('-P');
+         argv.push(GLib.build_filenamev([this.path, 'app']));
+-
+         this.data.currentProcess = new LaunchSubprocess(0, 'DING');
+         this.data.currentProcess.set_cwd(GLib.get_home_dir());
+         if (this.data.currentProcess.spawnv(argv) === null) {
+@@ -449,19 +361,12 @@ export default class DING extends Extension {
+         }
+         this.data.x11Manager.setWaylandClient(this.data.currentProcess);
+         this.data.launchTime = GLib.get_monotonic_time();
+-
+-        /*
+-        * If the desktop process dies, wait 100ms and relaunch it, unless the exit status is different than
+-        * zero, in which case it will wait one second. This is done this way to avoid relaunching the desktop
+-        * too fast if it has a bug that makes it fail continuously, avoiding filling the journal too fast.
+-        */
++        
+         this.data.currentProcess.subprocess.wait_async(null, (obj, res) => {
+             let delta = GLib.get_monotonic_time() - this.data.launchTime;
+             if (delta < 1000000) {
+-                // If the process is dying over and over again, ensure that it isn't respawn faster than once per second
+                 var reloadTime = 1000;
+             } else {
+-                // but if the process just died after having run for at least one second, reload it ASAP
+                 var reloadTime = 1;
+             }
+             obj.wait_finish(res);
+@@ -475,26 +380,20 @@ export default class DING extends Extension {
+         });
+     }
+ }
+-/**
+- * This class encapsulates the code to launch a subprocess that can detect whether a window belongs to it
+- * It only accepts to do it under Wayland, because under X11 there is no need to do these tricks
+- *
+- * It is compatible with https://gitlab.gnome.org/GNOME/mutter/merge_requests/754 to simplify the code
+- *
+- * @param {int} flags Flags for the SubprocessLauncher class
+- * @param {string} process_id An string id for the debug output
+- */
++
+ class LaunchSubprocess {
+     constructor(flags, process_id) {
+         this._process_id = process_id;
+         this.cancellable = new Gio.Cancellable();
+-        this._launcher = new Gio.SubprocessLauncher({flags: flags | Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_MERGE});
++        this._launcher = new Gio.SubprocessLauncher({
++            flags: flags | Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_MERGE
++        });
+         if (Meta.is_wayland_compositor()) {
+             try {
+                 this._waylandClient = Meta.WaylandClient.new(this._launcher);
+             } catch (e) {
+                 this._waylandClient = Meta.WaylandClient.new(global.context,
+-                                                             this._launcher);
++                    this._launcher);
+             }
+         }
+         this.subprocess = null;
+@@ -512,19 +411,14 @@ class LaunchSubprocess {
+             }
+         } catch (e) {
+             this.subprocess = null;
+-            console.log(`Error while trying to launch DING process: ${e.message}\n${e.stack}`);
++            Logger.log(`Error while trying to launch DING process: ${e.message}\n${e.stack}`);
+         }
+-        // This is for GLib 2.68 or greater
++        
+         if (this._launcher.close) {
+             this._launcher.close();
+         }
+         this._launcher = null;
+         if (this.subprocess) {
+-            /*
+-                 * It reads STDOUT and STDERR and sends it to the journal using console.log(). This allows to
+-                 * have any error from the desktop app in the same journal than other extensions. Every line from
+-                 * the desktop program is prepended with the "process_id" parameter sent in the constructor.
+-                 */
+             this._dataInputStream = Gio.DataInputStream.new(this.subprocess.get_stdout_pipe());
+             this.read_output();
+             this.subprocess.wait_async(this.cancellable, () => {
+@@ -539,8 +433,6 @@ class LaunchSubprocess {
+             });
+             this.process_running = true;
+             if (Meta.is_wayland_compositor() && (Main.layoutManager.monitors.length != 0)) {
+-                // This ensures that, if the DING window isn't detected in three seconds
+-                // after launch, the desktop will be killed and, thus, relaunched again.
+                 this._waiting_for_windows = Main.layoutManager.monitors.length;
+                 this._launch_timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 3000, () => {
+                     this._launch_timer = 0;
+@@ -572,24 +464,19 @@ class LaunchSubprocess {
+             try {
+                 const [output, length] = object.read_line_finish_utf8(res);
+                 if (length) {
+-                    print(`${this._process_id}: ${output}`);
++                    Logger.print(`${this._process_id}: ${output}`);
+                 }
+             } catch (e) {
+                 if (e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)) {
+                     return;
+                 }
+-                console.error(e, `${this._process_id}_Error`);
++                // USO DO LOGGER:
++                Logger.error(e, `${this._process_id}_Error`);
+             }
+-
+             this.read_output();
+         });
+     }
+ 
+-    /**
+-     * Queries whether the passed window belongs to the launched subprocess or not.
+-     *
+-     * @param {MetaWindow} window The window to check.
+-     */
+     query_window_belongs_to(window) {
+         if (!Meta.is_wayland_compositor()) {
+             return false;
+@@ -600,7 +487,7 @@ class LaunchSubprocess {
+         try {
+             let ownsWindow = this._waylandClient.owns_window(window);
+             if (ownsWindow && (this._launch_timer != 0) && (this._waiting_for_windows != 0)) {
+-                console.log(`Received notification for window. ${this._waiting_for_windows - 1} notifications remaining.`);
++                Logger.log(`Received notification for window. ${this._waiting_for_windows - 1} notifications remaining.`);
+                 this._waiting_for_windows--;
+                 if (this._waiting_for_windows == 0) {
+                     GLib.source_remove(this._launch_timer);
+@@ -609,7 +496,7 @@ class LaunchSubprocess {
+             }
+             return ownsWindow;
+         } catch (error) {
+-            console.log(`Exception error: ${error.message}\n${error.stack}`);
++            Logger.log(`Exception error: ${error.message}\n${error.stack}`);
+             return false;
+         }
+     }
+diff --git a/metadata.json b/metadata.json
+index 1b9f0ba..795dbf1 100644
+--- a/metadata.json
++++ b/metadata.json
+@@ -3,5 +3,6 @@
+     "name": "Desktop Icons NG (DING)",
+     "shell-version": ["45", "46", "47", "48"],
+     "uuid": "ding@rastersoft.com",
+-    "url": "https://gitlab.com/rastersoft/desktop-icons-ng"
++    "url": "https://gitlab.com/rastersoft/desktop-icons-ng",
++    "settings-schema": "org.gnome.shell.extensions.ding"
+ }
+diff --git a/prefs.js b/prefs.js
+index 063c61a..7c81393 100644
+--- a/prefs.js
++++ b/prefs.js
+@@ -1,39 +1,70 @@
+-
+ /* Desktop Icons GNOME Shell extension
+  *
+  * Copyright (C) 2019 Sergio Costas (rastersoft@gmail.com)
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation, either version 3 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  */
+ 'use strict';
+-import Gio from 'gi://Gio'
++
++import Gio from 'gi://Gio';
+ import Adw from 'gi://Adw';
++import Gtk from 'gi://Gtk';
+ 
+ import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+ 
+ export default class DingPreferences extends ExtensionPreferences {
+     fillPreferencesWindow(window) {
+-        let mainAppControl = Gio.DBusActionGroup.get(
+-            Gio.DBus.session,
+-            'com.rastersoft.ding',
+-            '/com/rastersoft/ding'
+-        );
+-        mainAppControl.activate_action('changeDesktopIconSettings', null);
++        const settings = this.getSettings();
+ 
+         const page = new Adw.PreferencesPage();
+-
+         window.add(page);
+-        window.connect_after('show', ()=>{window.close();});
++
++        const mainGroup = new Adw.PreferencesGroup({
++            title: 'Configurações Gerais',
++            description: 'Opções de ícones, lixeira e comportamento.'
++        });
++        page.add(mainGroup);
++
++        const openSettingsRow = new Adw.ActionRow({
++            title: 'Abrir Gerenciador de Configurações',
++            subtitle: 'Configurar tamanho de ícones, posições e pastas padrão'
++        });
++
++        const settingsButton = new Gtk.Button({
++            label: 'Abrir',
++            valign: Gtk.Align.CENTER
++        });
++
++        settingsButton.connect('clicked', () => {
++            let mainAppControl = Gio.DBusActionGroup.get(
++                Gio.DBus.session,
++                'com.rastersoft.ding',
++                '/com/rastersoft/ding'
++            );
++            mainAppControl.activate_action('changeDesktopIconSettings', null);
++        });
++
++        openSettingsRow.add_suffix(settingsButton);
++        openSettingsRow.set_activatable_widget(settingsButton);
++        mainGroup.add(openSettingsRow);
++
++        const devGroup = new Adw.PreferencesGroup({
++            title: 'Desenvolvedor',
++            description: 'Ferramentas para depuração e análise.'
++        });
++        page.add(devGroup);
++
++        const debugRow = new Adw.SwitchRow({
++            title: 'Modo Debug',
++            subtitle: 'Exibir logs detalhados (console.log) no journalctl'
++        });
++
++        settings.bind(
++            'debug-mode',
++            debugRow,
++            'active',
++            Gio.SettingsBindFlags.DEFAULT
++        );
++
++        devGroup.add(debugRow);
++
+     }
+ }
+diff --git a/schemas/org.gnome.shell.extensions.ding.gschema.xml b/schemas/org.gnome.shell.extensions.ding.gschema.xml
+index d29f569..ab7f4b1 100644
+--- a/schemas/org.gnome.shell.extensions.ding.gschema.xml
++++ b/schemas/org.gnome.shell.extensions.ding.gschema.xml
+@@ -12,7 +12,7 @@
+         <value value="2" nick="bottom-left"/>
+         <value value="3" nick="bottom-right"/>
+     </enum>
+-        <enum id="org.gnome.shell.extension.ding.ArrangeOrder">
++    <enum id="org.gnome.shell.extension.ding.ArrangeOrder">
+         <value value="1" nick="NAME"/>
+         <value value="2" nick="DESCENDINGNAME"/>
+         <value value="3" nick="MODIFIEDTIME"/>
+@@ -20,90 +20,97 @@
+         <value value="5" nick="SIZE"/>
+     </enum>
+     <schema path="/org/gnome/shell/extensions/ding/" id="org.gnome.shell.extensions.ding">
+-    <key name="icon-size" enum="org.gnome.shell.extension.ding.ZoomLevel">
+-        <default>'small'</default>
+-        <summary>Icon size</summary>
+-        <description>Set the size for the desktop icons.</description>
+-    </key>
+-    <key type="b" name="show-home">
+-        <default>true</default>
+-        <summary>Show personal folder</summary>
+-        <description>Show the personal folder in the desktop.</description>
+-    </key>
+-    <key type="b" name="show-trash">
+-        <default>true</default>
+-        <summary>Show trash icon</summary>
+-        <description>Show the trash icon in the desktop.</description>
+-    </key>
+-    <key name="start-corner" enum="org.gnome.shell.extension.ding.StartCorner">
+-        <default>'top-left'</default>
+-        <summary>New icons start corner</summary>
+-        <description>Set the corner from where the icons will start to be placed.</description>
+-    </key>
+-    <key type="b" name="show-volumes">
+-        <default>true</default>
+-        <summary>Show external drives in the desktop</summary>
+-        <description>Show the disk drives connected to the computer.</description>
+-    </key>
+-    <key type="b" name="show-network-volumes">
+-        <default>false</default>
+-        <summary>Show network drives in the desktop</summary>
+-        <description>Show mounted network volumes in the desktop.</description>
+-    </key>
+-    <key type="b" name="add-volumes-opposite">
+-        <default>true</default>
+-        <summary>Add new drives to the opposite side of the screen</summary>
+-        <description>When adding drives and volumes to the desktop, add them to the opposite side of the screen.</description>
+-    </key>
+-    <key type="b" name="show-drop-place">
+-        <default>true</default>
+-        <summary>Shows a rectangle in the destination place during DnD</summary>
+-        <description>When doing a Drag'n'Drop operation, marks the place in the grid where the icon will be put with a semitransparent rectangle.</description>
+-    </key>
+-    <key type="b" name="sort-special-folders">
+-        <default>false</default>
+-        <summary>Sort Special Folders - Home/Trash Drives.</summary>
+-        <description>When arranging Icons on desktop, to sort and change the position of the Home, Trash and mounted Network or External Drives</description>
+-    </key>
+-    <key type="b" name="keep-arranged">
+-        <default>false</default>
+-        <summary>Keep Icons Arranged</summary>
+-        <description>Always keep Icons Arranged by the last arranged order</description>
+-    </key>
+-    <key name="arrangeorder" enum="org.gnome.shell.extension.ding.ArrangeOrder">
+-        <default>'NAME'</default>
+-        <summary>Arrange Order</summary>
+-        <description>Icons Arranged by this property</description>
+-    </key>
+-    <key type="b" name="keep-stacked">
+-        <default>false</default>
+-        <summary>Keep Icons Stacked</summary>
+-        <description>Always keep Icons Stacked, Similar types are grouped</description>
+-    </key>
+-    <key type="as" name="unstackedtypes">
+-        <default>[]</default>
+-        <summary>Type of Files to not Stack</summary>
+-        <description>An Array of strings types, Don't Stack these types of files</description>
+-    </key>
+-    <key type="b" name="use-nemo">
+-        <default>false</default>
+-        <summary>Use Nemo to open folders</summary>
+-        <description>Use Nemo instead of Nautilus to open folders.</description>
+-    </key>
+-    <key type="b" name="show-link-emblem">
+-        <default>true</default>
+-        <summary>Add an emblem to links</summary>
+-        <description>Add an emblem to allow to identify soft links.</description>
+-    </key>
+-    <key type="b" name="dark-text-in-labels">
+-        <default>false</default>
+-        <summary>Use black for label text</summary>
+-        <description>Paint the label text in black instead of white. Useful when using light backgrounds.</description>
+-    </key>
+-    <key type="b" name="check-x11wayland">
+-        <default>true</default>
+-        <summary>Show a popup if running on X11Wayland</summary>
+-        <description>Whether DING should show a popup if it is running on X11Wayland, or the user decided to not show it anymore.</description>
+-    </key>
++        <key name="icon-size" enum="org.gnome.shell.extension.ding.ZoomLevel">
++            <default>'small'</default>
++            <summary>Icon size</summary>
++            <description>Set the size for the desktop icons.</description>
++        </key>
++        <key type="b" name="show-home">
++            <default>true</default>
++            <summary>Show personal folder</summary>
++            <description>Show the personal folder in the desktop.</description>
++        </key>
++        <key type="b" name="show-trash">
++            <default>true</default>
++            <summary>Show trash icon</summary>
++            <description>Show the trash icon in the desktop.</description>
++        </key>
++        <key name="start-corner" enum="org.gnome.shell.extension.ding.StartCorner">
++            <default>'top-left'</default>
++            <summary>New icons start corner</summary>
++            <description>Set the corner from where the icons will start to be placed.</description>
++        </key>
++        <key type="b" name="show-volumes">
++            <default>true</default>
++            <summary>Show external drives in the desktop</summary>
++            <description>Show the disk drives connected to the computer.</description>
++        </key>
++        <key type="b" name="show-network-volumes">
++            <default>false</default>
++            <summary>Show network drives in the desktop</summary>
++            <description>Show mounted network volumes in the desktop.</description>
++        </key>
++        <key type="b" name="add-volumes-opposite">
++            <default>true</default>
++            <summary>Add new drives to the opposite side of the screen</summary>
++            <description>When adding drives and volumes to the desktop, add them to the opposite side of the screen.</description>
++        </key>
++        <key type="b" name="show-drop-place">
++            <default>true</default>
++            <summary>Shows a rectangle in the destination place during DnD</summary>
++            <description>When doing a Drag'n'Drop operation, marks the place in the grid where the icon will be put with a semitransparent rectangle.</description>
++        </key>
++        <key type="b" name="sort-special-folders">
++            <default>false</default>
++            <summary>Sort Special Folders - Home/Trash Drives.</summary>
++            <description>When arranging Icons on desktop, to sort and change the position of the Home, Trash and mounted Network or External Drives</description>
++        </key>
++        <key type="b" name="keep-arranged">
++            <default>false</default>
++            <summary>Keep Icons Arranged</summary>
++            <description>Always keep Icons Arranged by the last arranged order</description>
++        </key>
++        <key name="arrangeorder" enum="org.gnome.shell.extension.ding.ArrangeOrder">
++            <default>'NAME'</default>
++            <summary>Arrange Order</summary>
++            <description>Icons Arranged by this property</description>
++        </key>
++        <key type="b" name="keep-stacked">
++            <default>false</default>
++            <summary>Keep Icons Stacked</summary>
++            <description>Always keep Icons Stacked, Similar types are grouped</description>
++        </key>
++        <key type="as" name="unstackedtypes">
++            <default>[]</default>
++            <summary>Type of Files to not Stack</summary>
++            <description>An Array of strings types, Don't Stack these types of files</description>
++        </key>
++        <key type="b" name="use-nemo">
++            <default>false</default>
++            <summary>Use Nemo to open folders</summary>
++            <description>Use Nemo instead of Nautilus to open folders.</description>
++        </key>
++        <key type="b" name="show-link-emblem">
++            <default>true</default>
++            <summary>Add an emblem to links</summary>
++            <description>Add an emblem to allow to identify soft links.</description>
++        </key>
++        <key type="b" name="dark-text-in-labels">
++            <default>false</default>
++            <summary>Use black for label text</summary>
++            <description>Paint the label text in black instead of white. Useful when using light backgrounds.</description>
++        </key>
++        <key type="b" name="check-x11wayland">
++            <default>true</default>
++            <summary>Show a popup if running on X11Wayland</summary>
++            <description>Whether DING should show a popup if it is running on X11Wayland, or the user decided to not show it anymore.</description>
++        </key>
++        
++        <key type="b" name="debug-mode">
++            <default>false</default>
++            <summary>Enable Debug Mode</summary>
++            <description>Show console.log and print messages in system journal.</description>
++        </key>
++
+     </schema>
+ </schemalist>
